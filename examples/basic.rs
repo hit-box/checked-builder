@@ -14,7 +14,6 @@ fn main() {
         .host("localhost")
         .enable_logging("Debug".to_owned());
     dbg!(&builder);
-    let config = builder
-        .build();
+    let config = builder.build();
     dbg!(&config);
 }

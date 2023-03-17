@@ -1,11 +1,11 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Error, Data, Fields};
+use syn::{parse_macro_input, Data, DeriveInput, Error, Fields};
 
 use crate::fields::Struct;
 
-mod test;
 mod fields;
+mod test;
 
 #[proc_macro_derive(CheckedBuilder, attributes(builder))]
 pub fn derive_checked_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -28,11 +28,31 @@ fn checked_builder_derive_imp(ast: &syn::DeriveInput) -> Result<TokenStream, Err
                 quote! {
                     #builder_states
                 }
-            },
-            Fields::Unnamed(_) => return Err(Error::new_spanned(ast, "CheckedBuilder isn't support tuple structs")),
-            Fields::Unit => return Err(Error::new_spanned(ast, "CheckedBuilder isn't support unit structs")),
+            }
+            Fields::Unnamed(_) => {
+                return Err(Error::new_spanned(
+                    ast,
+                    "CheckedBuilder isn't support tuple structs",
+                ))
+            }
+            Fields::Unit => {
+                return Err(Error::new_spanned(
+                    ast,
+                    "CheckedBuilder isn't support unit structs",
+                ))
+            }
         },
-        Data::Enum(_) => return Err(Error::new_spanned(ast, "CheckedBuilder isn't support enums")),
-        Data::Union(_) => return Err(Error::new_spanned(ast, "CheckedBuilder isn't support unions")),
+        Data::Enum(_) => {
+            return Err(Error::new_spanned(
+                ast,
+                "CheckedBuilder isn't support enums",
+            ))
+        }
+        Data::Union(_) => {
+            return Err(Error::new_spanned(
+                ast,
+                "CheckedBuilder isn't support unions",
+            ))
+        }
     })
 }

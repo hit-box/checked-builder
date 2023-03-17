@@ -1,6 +1,6 @@
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream};
-use quote::{quote, format_ident};
+use quote::{format_ident, quote};
 use syn::{DeriveInput, Error, Type};
 
 #[derive(Debug)]
@@ -25,7 +25,12 @@ impl<'a> Struct<'a> {
         let (states, (traits, impl_state)): (Vec<_>, (Vec<_>, Vec<_>)) = self
             .fields
             .iter()
-            .map(|field| (field.builder_state(self), (field.field_setter_trait(self), field.impl_state_trait(self))))
+            .map(|field| {
+                (
+                    field.builder_state(self),
+                    (field.field_setter_trait(self), field.impl_state_trait(self)),
+                )
+            })
             .unzip();
         let getter_traits = self
             .fields
@@ -50,14 +55,14 @@ impl<'a> Struct<'a> {
             #( #getter_traits )*
             #( #impl_getters )*
 
-            trait ConfigBuilder 
+            trait ConfigBuilder
             where
                 Self: ConfigBuilderState + ConfigBuilderEnableLogging + ConfigBuilderEnableTracing,
             {
                 fn build(self) -> Config;
             }
 
-            impl<S> ConfigBuilder for S 
+            impl<S> ConfigBuilder for S
             where
                 S: ConfigBuilderState + ConfigBuilderEnableLogging + ConfigBuilderEnableTracing + ConfigBuilderHost,
             {
@@ -67,7 +72,7 @@ impl<'a> Struct<'a> {
                         enable_tracing: self.get_enable_tracing(),
                         host: self.get_host(),
                     }
-                } 
+                }
             }
         })
     }
@@ -89,7 +94,7 @@ impl<'a> Field<'a> {
         match field.ident {
             None => Err(Error::new_spanned(
                 field,
-                "CheckedBuilder unsupport nameless fields",
+                "CheckedBuilder don't support nameless fields",
             )),
             Some(ref name) => Ok(Field {
                 name,
@@ -120,7 +125,11 @@ impl<'a> Field<'a> {
         let Field { name, ty } = self;
         let state_trait_name = structure.state_trait_name();
         let builder_state_name = self.builder_state_name(structure);
-        let setter_trait_name = format!("{}Builder{}Set", structure.name, name.to_string().to_case(Case::Pascal));
+        let setter_trait_name = format!(
+            "{}Builder{}Set",
+            structure.name,
+            name.to_string().to_case(Case::Pascal)
+        );
         let setter_trait = Ident::new(setter_trait_name.as_str(), Span::call_site());
         quote! {
             trait #setter_trait: #state_trait_name + Sized {
@@ -144,7 +153,11 @@ impl<'a> Field<'a> {
     pub fn field_getter_trait(&self, structure: &Struct) -> TokenStream {
         let Field { name, ty } = self;
         let builder_state_name = self.builder_state_name(structure);
-        let getter_trait_name = format!("{}Builder{}", structure.name, name.to_string().to_case(Case::Pascal));
+        let getter_trait_name = format!(
+            "{}Builder{}",
+            structure.name,
+            name.to_string().to_case(Case::Pascal)
+        );
         let getter_trait = Ident::new(getter_trait_name.as_str(), Span::call_site());
         let getter_method_name = format_ident!("get_{}", name);
         quote! {
@@ -155,24 +168,30 @@ impl<'a> Field<'a> {
         }
     }
 
-    pub fn impl_field_getters(&self, structure: &Struct, fields: impl Iterator<Item = &'a Field<'a>>) -> TokenStream {
+    pub fn impl_field_getters(
+        &self,
+        structure: &Struct,
+        fields: impl Iterator<Item = &'a Field<'a>>,
+    ) -> TokenStream {
         let Field { name, ty } = self;
         let getter_method_name = format_ident!("get_{}", name);
-        let getter_trait_name = format!("{}Builder{}", structure.name, name.to_string().to_case(Case::Pascal));
+        let getter_trait_name = format!(
+            "{}Builder{}",
+            structure.name,
+            name.to_string().to_case(Case::Pascal)
+        );
         let getter_trait = Ident::new(getter_trait_name.as_str(), Span::call_site());
-        let impl_getters = fields
-            .filter(|field| field.name != *name)
-            .map(|field| {
-                let builder_state_name = field.builder_state_name(structure);
-                quote! {
-                    impl<S> #getter_trait for #builder_state_name<S>
-                    where
-                        S: ConfigBuilderState + #getter_trait
-                    {
-                        fn #getter_method_name(&self) -> #ty { self.inner.#getter_method_name() } 
-                    }
+        let impl_getters = fields.filter(|field| field.name != *name).map(|field| {
+            let builder_state_name = field.builder_state_name(structure);
+            quote! {
+                impl<S> #getter_trait for #builder_state_name<S>
+                where
+                    S: ConfigBuilderState + #getter_trait
+                {
+                    fn #getter_method_name(&self) -> #ty { self.inner.#getter_method_name() }
                 }
-            });
+            }
+        });
         quote! {
             #( #impl_getters )*
         }
