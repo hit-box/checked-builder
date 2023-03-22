@@ -8,13 +8,19 @@ pub struct Config {
     pub port: u16,
 }
 
-fn main() {
-    let builder = Config::builder()
-        .enable_logging("Info".to_owned())
+fn partially_builder() -> impl ConfigBuilderState
+       + config_builder::ConfigBuilderEnableTracing
+       + config_builder::ConfigBuilderEnableLogging {
+    Config::builder()
+        .enable_logging("Warn".to_owned())
         .enable_tracing(true)
+}
+
+fn main() {
+    let builder = partially_builder()
         .host("localhost")
         .port(8080)
-        .enable_logging("Debug".to_owned());
+        .enable_tracing(false);
     let config = builder.build();
     println!("{config:#?}");
 }

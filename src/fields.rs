@@ -29,7 +29,7 @@ impl<'a> StateTrait<'a> {
     pub(crate) fn definition(&self) -> TokenStream {
         let StateTrait { vis, name } = self;
         quote! {
-            #vis trait #name {}
+            #vis trait #name: ::std::fmt::Debug {}
         }
     }
 }
@@ -187,7 +187,7 @@ impl<'a> Struct<'a> {
     // TODO: precalculate
     pub(crate) fn module_name(&self) -> Ident {
         let name = self.name.to_string().to_case(Case::Snake);
-        Ident::new(name.as_str(), Span::call_site())
+        format_ident!("{name}_builder")
     }
 }
 

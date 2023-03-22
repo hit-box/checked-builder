@@ -5,7 +5,6 @@ use syn::{parse_macro_input, Data, DeriveInput, Error, Fields};
 use crate::fields::Struct;
 
 mod fields;
-mod test;
 
 #[proc_macro_derive(CheckedBuilder, attributes(builder))]
 pub fn derive_checked_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
