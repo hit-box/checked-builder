@@ -29,40 +29,26 @@ fn checked_builder_derive_imp(ast: &syn::DeriveInput) -> Result<TokenStream, Err
                 let setter_traits = structure.setter_traits();
                 let getter_traits = structure.getter_traits();
                 let getters_impl = structure.getters_impl();
+                let builder_trait = structure.builder_trait();
+                let builder_trait_impl = structure.builder_trait_impl();
+                let import_traits = structure.import_traits();
+                let module_name = structure.module_name();
 
                 quote! {
                     #struct_builder_impl
                     #state_trait_definition
                     #initial_state_definition
                     #initial_state_trait_impl
-                    mod config_builder {
+                    mod #module_name {
                         use super::*;
                         #builder_states
                         #setter_traits
                         #getter_traits
                         #getters_impl
-
-                        pub trait ConfigBuilder
-                        where
-                            Self: ConfigBuilderState + ConfigBuilderEnableLogging + ConfigBuilderEnableTracing + ConfigBuilderHost,
-                        {
-                            fn build(self) -> Config;
-                        }
-
-                        impl<S> ConfigBuilder for S
-                        where
-                            S: ConfigBuilderState + ConfigBuilderEnableLogging + ConfigBuilderEnableTracing + ConfigBuilderHost,
-                        {
-                            fn build(self) -> Config {
-                                Config {
-                                    enable_logging: self.get_enable_logging(),
-                                    enable_tracing: self.get_enable_tracing(),
-                                    host: self.get_host(),
-                                }
-                            }
-                        }
+                        #builder_trait
+                        #builder_trait_impl
                     }
-                    use config_builder::{ConfigBuilder, ConfigBuilderEnableLoggingSetter, ConfigBuilderEnableTracingSetter, ConfigBuilderHostSetter};
+                    #import_traits
                 }
             }
             Fields::Unnamed(_) => {

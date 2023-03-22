@@ -134,6 +134,61 @@ impl<'a> Struct<'a> {
             #( #getters_impl )*
         }
     }
+
+    pub(crate) fn builder_trait(&self) -> TokenStream {
+        let struct_name = self.name;
+        let state_trait = &self.state_trait.name;
+        let builder_trait_name = format_ident!("{struct_name}Builder");
+        let getter_traits = self.fields.iter().map(|field| &field.getter_trait.name);
+        quote! {
+            pub trait #builder_trait_name
+            where
+                Self: #state_trait #( + #getter_traits )*,
+            {
+                fn build(self) -> #struct_name;
+            }
+        }
+    }
+
+    pub(crate) fn builder_trait_impl(&self) -> TokenStream {
+        let struct_name = self.name;
+        let state_trait = &self.state_trait.name;
+        let builder_trait_name = format_ident!("{struct_name}Builder");
+        let getter_traits = self.fields.iter().map(|field| &field.getter_trait.name);
+        let call_getters = self.fields.iter().map(|field| {
+            let field_name = &field.name;
+            let getter = &field.getter_trait.method_name;
+            quote! { #field_name: self.#getter() }
+        });
+        quote! {
+            impl<S> #builder_trait_name for S
+            where
+                S: #state_trait #( + #getter_traits )*,
+            {
+                fn build(self) -> #struct_name {
+                    #struct_name {
+                        #( #call_getters, )*
+                    }
+                }
+            }
+        }
+    }
+
+    pub(crate) fn import_traits(&self) -> TokenStream {
+        let struct_name = self.name;
+        let module_name = self.module_name();
+        let builder_trait_name = format_ident!("{struct_name}Builder"); // TODO: precalculate
+        let traits = self.fields.iter().map(|field| &field.setter_trait.name);
+        quote! {
+            use #module_name::{#builder_trait_name, #( #traits, )*};
+        }
+    }
+
+    // TODO: precalculate
+    pub(crate) fn module_name(&self) -> Ident {
+        let name = self.name.to_string().to_case(Case::Snake);
+        Ident::new(name.as_str(), Span::call_site())
+    }
 }
 
 #[derive(Debug)]
