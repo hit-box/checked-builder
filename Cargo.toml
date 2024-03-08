@@ -4,10 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-syn = { version = "1", features = ["full", "extra-traits"] }
+syn = { version = "2", features = ["full", "extra-traits"] }
 quote = "1"
 proc-macro2 = "1"
 convert_case = "0.6"
+darling = "0.20.8"
 
 [lib]
 proc-macro = true

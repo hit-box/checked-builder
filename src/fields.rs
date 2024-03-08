@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, quote};
-use syn::{DeriveInput, Error, Token, Type, VisPublic, Visibility};
+use syn::{DeriveInput, Error, Token, Type, Visibility};
 
 const STATE_TRAIT_NAME_POSTFIX: &str = "BuilderState";
 const INITIAL_STATE_NAME_POSTFIX: &str = "BuilderInitialState";
@@ -209,9 +209,7 @@ impl BuilderState {
         );
         Self {
             name,
-            vis: Visibility::Public(VisPublic {
-                pub_token: Token![pub](Span::call_site()),
-            }),
+            vis: Visibility::Public(Token![pub](Span::call_site())),
         }
     }
 }
